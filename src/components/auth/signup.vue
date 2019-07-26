@@ -77,7 +77,8 @@
               mode="out-in"
             >
               <p
-                v-if="!$v.hobbyInputs.minLen" class="text-danger"
+                v-if="!$v.hobbyInputs.minLen"
+                class="text-danger"
               >Should input atleast {{ $v.hobbyInputs.$params.minLen.min }} hobbies.</p>
             </transition>
           </div>
@@ -97,6 +98,7 @@
 </template>
 
 <script>
+import axios from "axios";
 import {
   required,
   email,
@@ -127,7 +129,15 @@ export default {
   validations: {
     email: {
       required,
-      email
+      email,
+      unique: val => {
+        if (val === "") return true;
+        return axios
+          .get('/users.json?orderBy="email"&equalTo="' + val + '"')
+          .then(res => {
+            return Object.keys(res.data).length === 0;
+          });
+      }
     },
     age: {
       required,
@@ -146,10 +156,12 @@ export default {
       })
     },
     terms: {
-      required: requiredUnless("isIndia"), //not working anymore
-      sameAs: sameAs(() => {
-        return true;
-      })
+      // required: requiredUnless("isIndia"), //not working anymore
+      checkForCountry: val => {
+        if (this.isIndia) return true;
+        else if (val === true) return true;
+        return false;
+      }
     },
     hobbyInputs: {
       required,
